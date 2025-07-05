@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Insight – Upload & Ask</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gradient-bg: linear-gradient(135deg, #f97316, #ec4899);
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --text-primary: #fff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --heading-color: #fcd34d;
+      --font-heading: 'Playfair Display', serif;
+      --font-body: 'Inter', sans-serif;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: linear-gradient(to right, #1e1b4b, #be185d, #f97316);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    header h1 {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      color: var(--heading-color);
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 10px rgba(252, 211, 77, 0.3); }
+      to { text-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(252, 211, 77, 0.5); }
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .upload-section, .chat-section {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .upload-section:hover, .chat-section:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .upload-section::before, .chat-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    h2 {
+      font-family: var(--font-heading);
+      color: var(--heading-color);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-input-label {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--gradient-bg);
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      text-align: center;
+      border: 2px dashed var(--glass-border);
+    }
+
+    .file-input-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .upload-status {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .upload-status.success {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid var(--success);
+      color: var(--success);
+      opacity: 1;
+    }
+
+    .upload-status.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--error);
+      color: var(--error);
+      opacity: 1;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      font-family: inherit;
+      resize: none;
+      min-height: 80px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--success);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    textarea::placeholder {
+      color: var(--text-secondary);
+    }
+
+    button {
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      background: var(--gradient-bg);
+      color: white;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chat-box {
+      margin-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 0.75rem;
+      border: 1px solid var(--glass-border);
+    }
+
+    .chat-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-box::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    .message {
+      margin: 0.75rem 0;
+      padding: 1rem;
+      border-radius: 1rem;
+      animation: fadeIn 0.3s ease;
+      max-width: 85%;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      background: rgba(255, 255, 255, 0.15);
+      margin-left: auto;
+      border-bottom-right-radius: 0.25rem;
+    }
+
+    .message.ai {
+      background: rgba(34, 197, 94, 0.15);
+      border-left: 3px solid var(--success);
+      border-bottom-left-radius: 0.25rem;
+    }
+
+    .message.thinking {
+      background: rgba(255, 255, 255, 0.1);
+      border-left: 3px solid var(--heading-color);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .placeholder {
+      text-align: center;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: var(--success);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      main {
+        padding: 1rem;
+      }
+      
+      .upload-section, .chat-section {
+        padding: 1.5rem;
+      }
+      
+      header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📄 PDF Insight – Upload & Ask</h1>
+  </header>
+  <main>
+    <div class="upload-section">
+      <h2>Step 1: Upload Your PDF</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="pdfFile" accept="application/pdf">
+        <label for="pdfFile" class="file-input-label">
+          📁 Choose PDF File
+        </label>
+      </div>
+      <div class="upload-status" id="uploadStatus"></div>
+    </div>
+
+    <div class="chat-section">
+      <h2>Step 2: Ask Questions</h2>
+      <textarea id="question" placeholder="Ask a question about the PDF content..."></textarea>
+      <button onclick="askQuestion()" id="askButton" disabled>Ask ➤</button>
+      <div class="chat-box" id="chatBox">
+        <div class="placeholder">Upload a PDF to start chatting about its content.</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    let pdfText = "";
+    let isProcessing = false;
+
+    // Configure PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    document.getElementById('pdfFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const uploadStatus = document.getElementById('uploadStatus');
+      const askButton = document.getElementById('askButton');
+      const chatBox = document.getElementById('chatBox');
+      
+      if (!file) return;
+
+      if (file.type !== "application/pdf") {
+        showUploadStatus("Please select a valid PDF file.", "error");
+        return;
+      }
+
+      showUploadStatus("Processing PDF...", "success");
+      askButton.disabled = true;
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async function () {
+          try {
+            const typedArray = new Uint8Array(this.result);
+            const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+            let text = "";
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              const pageText = content.items.map(item => item.str).join(" ");
+              text += pageText + "\n";
+            }
+            
+            pdfText = text.trim();
+            
+            if (pdfText.length < 10) {
+              showUploadStatus("PDF appears to be empty or text could not be extracted.", "error");
+              return;
+            }
+            
+            showUploadStatus(`✅ PDF processed successfully! (${pdf.numPages} pages, ${pdfText.length} characters)`, "success");
+            askButton.disabled = false;
+            
+            // Clear chat and show ready message
+            chatBox.innerHTML = '<div class="placeholder">PDF loaded! Ask questions about its content.</div>';
+            
+          } catch (error) {
+            console.error('PDF processing error:', error);
+            showUploadStatus("Error processing PDF. Please try another file.", "error");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        console.error('File reading error:', error);
+        showUploadStatus("Error reading file. Please try again.", "error");
+      }
+    });
+
+    function showUploadStatus(message, type) {
+      const uploadStatus = document.getElementById('uploadStatus');
+      uploadStatus.textContent = message;
+      uploadStatus.className = `upload-status ${type}`;
+    }
+
+    async function askQuestion() {
+      const questionInput = document.getElementById("question");
+      const question = questionInput.value.trim();
+      const chatBox = document.getElementById("chatBox");
+      const askButton = document.getElementById("askButton");
+      
+      if (!question) {
+        alert("Please enter a question.");
+        return;
+      }
+
+      if (!pdfText) {
+        alert("Please upload a PDF first.");
+        return;
+      }
+
+      if (isProcessing) return;
+
+      isProcessing = true;
+      askButton.disabled = true;
+
+      // Clear placeholder if it exists
+      const placeholder = chatBox.querySelector('.placeholder');
+      if (placeholder) {
+        placeholder.remove();
+      }
+
+      // Add user message
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.textContent = question;
+      chatBox.appendChild(userMsg);
+
+      // Add thinking message
+      const thinkingMsg = document.createElement("div");
+      thinkingMsg.className = "message thinking";
+      thinkingMsg.innerHTML = '<div class="loading"></div> Analyzing document...';
+      chatBox.appendChild(thinkingMsg);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+      questionInput.value = "";
+
+      // Simulate processing time and generate response
+      setTimeout(() => {
+        const response = generateResponse(question, pdfText);
+        
+        // Remove thinking message
+        thinkingMsg.remove();
+        
+        // Add AI response
+        const aiMsg = document.createElement("div");
+        aiMsg.className = "message ai";
+        aiMsg.textContent = response;
+        chatBox.appendChild(aiMsg);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        isProcessing = false;
+        askButton.disabled = false;
+      }, 1500 + Math.random() * 1000);
+    }
+
+    function generateResponse(question, text) {
+      const lowerQuestion = question.toLowerCase();
+      const lowerText = text.toLowerCase();
+      
+      // Extract key terms from question
+      const questionWords = lowerQuestion.split(/\s+/).filter(word => 
+        word.length > 3 && !['what', 'where', 'when', 'why', 'how', 'does', 'will', 'can', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'].includes(word)
+      );
+
+      // Search for relevant content
+      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
+      const relevantSentences = [];
+
+      for (const sentence of sentences) {
+        const lowerSentence = sentence.toLowerCase();
+        let matchScore = 0;
+        
+        for (const word of questionWords) {
+          if (lowerSentence.includes(word)) {
+            matchScore += 1;
+          }
+        }
+        
+        if (matchScore > 0) {
+          relevantSentences.push({ sentence: sentence.trim(), score: matchScore });
+        }
+      }
+
+      // Sort by relevance and get top matches
+      relevantSentences.sort((a, b) => b.score - a.score);
+      const topSentences = relevantSentences.slice(0, 3);
+
+      if (topSentences.length === 0) {
+        return `I couldn't find specific information about "${question}" in the document. The document appears to contain content about various topics. Could you try rephrasing your question or asking about different aspects of the document?`;
+      }
+
+      // Generate response based on question type
+      if (lowerQuestion.includes('summary') || lowerQuestion.includes('summarize')) {
+        return `Based on the document, here's a summary of the key points: ${topSentences.map(s => s.sentence).join(' ')}`;
+      } else if (lowerQuestion.includes('how many') || lowerQuestion.includes('count')) {
+        const numbers = text.match(/\d+/g) || [];
+        return `I found several numerical references in the document. Here are some relevant details: ${topSentences[0]?.sentence || 'No specific numerical information found for your query.'}`;
+      } else if (lowerQuestion.includes('when') || lowerQuestion.includes('date')) {
+        const dates = text.match(/\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/gi) || [];
+        return `Regarding timing/dates: ${topSentences[0]?.sentence || 'No specific date information found for your query.'}`;
+      } else {
+        return `Based on the document content: ${topSentences.map(s => s.sentence).slice(0, 2).join(' ')}`;
+      }
+    }
+
+    // Allow Enter key to ask question
+    document.getElementById('question').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        askQuestion();
+      }
+    });
+  </script>
+</body>
+</html>
