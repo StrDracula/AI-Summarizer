@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced PDF Section Summarizer | AI-Powered Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/docx@8.3.2/build/index.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
+  <style>
+    :root {
+      --gradient-bg: linear-gradient(135deg, #f97316, #ec4899);
+      --gradient-primary: linear-gradient(135deg, #f97316, #ec4899);
+      --gradient-secondary: linear-gradient(135deg, #f97316, #ec4899);
+      --gradient-accent: linear-gradient(135deg, #f97316, #ec4899);
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --dark-glass: rgba(0, 0, 0, 0.2);
+      --text-primary: #fff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.6);
+      --accent-color: #fcd34d;
+      --heading-color: #fcd34d;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --font-heading: 'Playfair Display', serif;
+      --font-body: 'Inter', sans-serif;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(to right, #1e1b4b, #be185d, #f97316);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .animated-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(249, 115, 22, 0.1), transparent);
+      animation: float 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 2rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .header-content h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 700;
+      background: var(--gradient-bg);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 30px rgba(249, 115, 22, 0.5);
+    }
+
+    .header-content p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .upload-section {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 2px dashed var(--glass-border);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .upload-section:hover::before {
+      left: 100%;
+    }
+
+    .upload-section:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(249, 115, 22, 0.2);
+    }
+
+    .upload-section.dragover {
+      background: rgba(249, 115, 22, 0.1);
+      border-color: var(--accent-color);
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .upload-section input[type="file"] {
+      display: none;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--gradient-bg);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    }
+
+    .upload-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+    }
+
+    .controls-section {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      height: fit-content;
+    }
+
+    .controls-section h3 {
+      color: var(--accent-color);
+      margin-bottom: 1.5rem;
+      font-size: 1.3rem;
+    }
+
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .radio-option input[type="radio"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--glass-border);
+      border-radius: 50%;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .radio-option input[type="radio"]:checked {
+      border-color: var(--heading-color);
+    }
+
+    .radio-option input[type="radio"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background: var(--heading-color);
+      border-radius: 50%;
+    }
+
+    .slider-container {
+      margin: 1rem 0;
+    }
+
+    .slider {
+      width: 100%;
+      height: 6px;
+      background: var(--dark-glass);
+      border-radius: 3px;
+      outline: none;
+      appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--gradient-bg);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .generate-section {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .generate-btn {
+      padding: 1rem 3rem;
+      background: var(--gradient-bg);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .generate-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .generate-btn:hover::before {
+      left: 100%;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--dark-glass);
+      border-radius: 4px;
+      margin: 1rem 0;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient-bg);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .results-section {
+      display: none;
+      margin-top: 3rem;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .results-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--heading-color);
+    }
+
+    .export-btn {
+      padding: 0.7rem 1.5rem;
+      background: var(--gradient-bg);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 2rem;
+    }
+
+    .section-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gradient-bg);
+      transition: width 0.3s ease;
+    }
+
+    .section-card:hover::before {
+      width: 8px;
+    }
+
+    .section-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(249, 115, 22, 0.2);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.5));
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--heading-color);
+    }
+
+    .section-content pre {
+      white-space: pre-wrap;         /* ✅ Allows text wrapping */
+      font-family: "Segoe UI", sans-serif;  /* ✅ Clear modern font */
+      font-size: 1rem;
+      color: #fefefe;
+      line-height: 1.6;
+    }
+
+    .section-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--glass-border);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .confidence-score {
+      background: var(--gradient-bg);
+      color: white;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid var(--dark-glass);
+      border-top: 3px solid var(--heading-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status-message {
+      text-align: center;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: var(--border-radius);
+      display: none;
+    }
+
+    .status-message.success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .status-message.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    .file-info {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--dark-glass);
+      border-radius: var(--border-radius);
+      text-align: left;
+    }
+
+    .file-info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 3rem;
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: var(--heading-color);
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .section-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .results-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .container {
+        padding: 1rem;
+      }
+      
+      .header-content h1 {
+        font-size: 2.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="animated-bg"></div>
+  
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <h1>🤖 AI-Powered PDF Summarizer</h1>
+        <p>Extract intelligent section summaries from your PDF documents with advanced AI analysis</p>
+      </div>
+    </header>
+
+    <div class="main-content">
+      <div class="upload-section" id="uploadSection">
+        <div class="upload-icon">📄</div>
+        <h3>Upload Your PDF Document</h3>
+        <p>Drag & drop your PDF here or click to browse</p>
+        <input type="file" id="pdfUpload" accept="application/pdf" multiple>
+        <label for="pdfUpload" class="upload-btn">Choose Files</label>
+        
+        <div class="file-info" id="fileInfo">
+          <div class="file-info-item">
+            <span>File Name:</span>
+            <span id="fileName">-</span>
+          </div>
+          <div class="file-info-item">
+            <span>File Size:</span>
+            <span id="fileSize">-</span>
+          </div>
+          <div class="file-info-item">
+            <span>Pages:</span>
+            <span id="pageCount">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <h3>⚙️ Analysis Settings</h3>
+        
+        <div class="control-group">
+          <label>Output Format:</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" name="format" value="bullets" id="bullets" checked>
+              <label for="bullets">Bullet Points</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" name="format" value="paragraph" id="paragraph">
+              <label for="paragraph">Paragraphs</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Summary Length:</label>
+          <div class="slider-container">
+            <input type="range" id="summaryLength" class="slider" min="1" max="5" value="3">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+              <span>Brief</span>
+              <span>Detailed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Analysis Depth:</label>
+          <div class="slider-container">
+            <input type="range" id="analysisDepth" class="slider" min="1" max="5" value="3">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+              <span>Surface</span>
+              <span>Deep</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>
+            <input type="checkbox" id="includeKeywords" style="margin-right: 0.5rem;">
+            Include Key Terms
+          </label>
+        </div>
+        
+        <div class="control-group">
+          <label>
+            <input type="checkbox" id="includeMetrics" style="margin-right: 0.5rem;">
+            Include Reading Metrics
+          </label>
+        </div>
+      </div>
+      
+      <div class="generate-section">
+        <button class="generate-btn" id="generateBtn" disabled>
+          🚀 Generate AI Summary
+        </button>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        <div class="status-message" id="statusMessage"></div>
+      </div>
+    </div>
+    
+    <div class="results-section" id="resultsSection">
+      <div class="results-header">
+        <h2 class="results-title">📊 Analysis Results</h2>
+        <button class="export-btn" id="exportBtn">📥 Export Results</button>
+        <button class="export-btn" id="exportMarkdownBtn">📝 Export as Markdown</button>
+        <button class="export-btn" id="exportWordBtn">📄 Export as Word</button>
+        <button class="export-btn" id="exportPDFBtn">📑 Export as PDF</button>
+      </div>
+      
+      <div class="section-grid" id="sectionGrid">
+        <!-- Results will be populated here -->
+      </div>
+    </div>
+    
+    <a href="#" class="back-link">
+      ← Back to Dashboard
+    </a>
+  </div>
+  
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    class PDFSummarizer {
+      constructor() {
+        this.uploadedFile = null;
+        this.extractedSections = [];
+        this.initializeEventListeners();
+      }
+      formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+      
+      async exportAsPDF() {
+        if (!this.extractedSections || this.extractedSections.length === 0) return;
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const title = "📄 PDF Insight – AI Summary";
+        const timestamp = new Date().toLocaleString();
+
+        doc.setFont("times", "bold"); // for headers
+        doc.setFontSize(16);
+        doc.text(title, 10, 20);
+
+        doc.setFont("times", "normal");
+        doc.setFontSize(14);
+        doc.text(`Generated on: ${timestamp}`, 10, 28);
+
+        let y = 40;
+
+        for (const section of this.extractedSections) {
+          const header = `📘 ${section.name}`;
+          const content = section.summary || section.content || "No summary.";
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.text(header, 10, y);
+          y += 8;
+
+          const lines = doc.splitTextToSize(content, 180);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(11);
+          for (const line of lines) {
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, 10, y);
+            y += 7;
+          }
+
+          y += 10;
+        }
+
+        doc.save(`${this.uploadedFile?.name || 'summary'}.pdf`);
+        this.showStatus("📑 PDF file exported successfully!", "success");
+      }
+
+      exportAsMarkdown() {
+        if (!this.extractedSections || this.extractedSections.length === 0) return;
+
+        let markdown = `# 📄 AI-Generated PDF Summary\n\n`;
+        markdown += `**File:** ${this.uploadedFile?.name || "Untitled"}\n`;
+        markdown += `**Generated on:** ${new Date().toLocaleString()}\n\n`;
+
+        this.extractedSections.forEach((section) => {
+          markdown += `## ${section.name}\n\n`;
+          markdown += `${section.summary || section.content || "*No summary available.*"}\n\n`;
+        });
+
+        const blob = new Blob([markdown], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this.uploadedFile?.name || "summary"}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async exportAsWord() {
+        if (!this.extractedSections || this.extractedSections.length === 0) return;
+
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+
+        const doc = new Document({
+          sections: [{
+            properties: {},
+            children: [
+              new Paragraph({
+                text: "📄 AI-Powered Summary",
+                heading: HeadingLevel.TITLE
+              }),
+              new Paragraph({
+                text: `Generated on: ${new Date().toLocaleString()}`,
+                spacing: { after: 300 }
+              }),
+              ...this.extractedSections.flatMap(section => [
+                new Paragraph({
+                  text: `📘 ${section.name}`,
+                  heading: HeadingLevel.HEADING_2,
+                  spacing: { before: 300, after: 100 }
+                }),
+                ...section.summary
+                  ? section.summary.split(/\n+/).map(line =>
+                      new Paragraph({
+                        children: [new TextRun({
+                                      text: line,
+                                      font: "Times New Roman",
+                                      size: 28  // size is half-points → 28 = 14pt
+                                    })],
+                        spacing: { after: 100 }
+                      })
+                    )
+                  : [new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: `📘 ${section.name}`,
+                            font: "Times New Roman",
+                            bold: true,
+                            size: 28
+                          })
+                        ]
+                      })]
+              ])
+            ]
+          }]
+        });
+
+        const blob = await Packer.toBlob(doc);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this.uploadedFile?.name || 'summary'}.docx`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        this.showStatus('📄 Word file exported successfully!', 'success');
+      }
+
+
+      initializeEventListeners() {
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('pdfUpload');
+        const generateBtn = document.getElementById('generateBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const exportWordBtn = document.getElementById('exportWordBtn');
+        const exportPDFBtn = document.getElementById('exportPDFBtn');
+        exportPDFBtn.addEventListener('click', () => this.exportAsPDF());
+        exportWordBtn.addEventListener('click', () => this.exportAsWord());
+        fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+        uploadSection.addEventListener('dragover', (e) => this.handleDragOver(e));
+        uploadSection.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        uploadSection.addEventListener('drop', (e) => this.handleFileDrop(e));
+        generateBtn.addEventListener('click', () => this.generateSummary());
+        exportBtn.addEventListener('click', () => this.exportResults());
+      }
+
+      async handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file) await this.processFile(file);
+      }
+
+      handleDragOver(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add('dragover');
+      }
+
+      handleDragLeave(event) {
+        event.currentTarget.classList.remove('dragover');
+      }
+
+      async handleFileDrop(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('dragover');
+        const file = event.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') await this.processFile(file);
+      }
+
+      async processFile(file) {
+        this.uploadedFile = file;
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = this.formatFileSize(file.size);
+        document.getElementById('pageCount').textContent = '~ ' + Math.ceil(file.size / 50000);
+        document.getElementById('fileInfo').style.display = 'block';
+
+        await this.extractSectionsFromPDF(file);
+
+        if (this.extractedSections.length > 0) {
+          document.getElementById('generateBtn').disabled = false;
+          this.showStatus('📄 File uploaded successfully!', 'success');
+        } else {
+          document.getElementById('generateBtn').disabled = true;
+          this.showStatus('⚠️ Could not extract meaningful sections. Try a different PDF.', 'error');
+        }
+      }
+
+
+      async extractSectionsFromPDF(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map(item => item.str);
+          fullText += strings.join(' ') + '\n\n';
+        }
+
+        const sectionRegex = /(?:^|\n)([A-Z][A-Za-z\s]{3,30})(?=\n|\:|\s)/g;
+        const rawSections = [];
+        let match, lastIndex = 0;
+
+        while ((match = sectionRegex.exec(fullText)) !== null) {
+          const sectionTitle = match[1].trim();
+          const start = match.index;
+          if (rawSections.length > 0) {
+            rawSections[rawSections.length - 1].content = fullText.slice(lastIndex, start).trim();
+          }
+          rawSections.push({ name: sectionTitle, content: '', icon: '📘' });
+          lastIndex = sectionRegex.lastIndex;
+        }
+
+        if (rawSections.length > 0) {
+          rawSections[rawSections.length - 1].content = fullText.slice(lastIndex).trim();
+        }
+
+        this.extractedSections = rawSections.filter(s => s.content.length > 50);
+      }
+
+      async generateSummary() {
+        if (!this.uploadedFile || this.extractedSections.length === 0) return;
+
+        const generateBtn = document.getElementById('generateBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+
+        generateBtn.disabled = true;
+        progressBar.style.display = 'block';
+        loadingSpinner.style.display = 'block';
+        this.showStatus('Analyzing document with AI...', 'info');
+
+        for (let i = 0; i <= 100; i += 10) {
+          await this.delay(200);
+          progressFill.style.width = i + '%';
+        }
+
+        progressBar.style.display = 'none';
+        loadingSpinner.style.display = 'none';
+
+        await this.displayResults();
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+        this.showStatus('Analysis complete!', 'success');
+        generateBtn.disabled = false;
+      }
+
+      async displayResults() {
+        const sectionGrid = document.getElementById('sectionGrid');
+        const format = document.querySelector('input[name="format"]:checked').value;
+        console.log("Extracted Sections:", this.extractedSections);
+        sectionGrid.innerHTML = '';
+
+        for (const section of this.extractedSections) {
+          const summary = await this.queryTogetherAI(section.content, format);
+          section.summary = summary;
+          const sectionCard = document.createElement('div');
+          sectionCard.className = 'section-card';
+          sectionCard.innerHTML = `
+            <div class="section-header">
+              <div class="section-icon">${section.icon}</div>
+              <div class="section-title">${section.name}</div>
+            </div>
+            <div class="section-content">
+              <pre>${summary}</pre>
+            </div>
+          `;
+
+          sectionGrid.appendChild(sectionCard);
+        }
+      }
+
+      async queryTogetherAI(text, format = 'bullets') {
+        const TOGETHER_API_KEY = "";
+        const TOGETHER_MODEL = "mistralai/Mistral-7B-Instruct-v0.1";
+
+        const prompt = `You are an expert academic summarizer. Please summarize the following passage in ${format === 'bullets' ? 'crisp bullet points' : 'a concise paragraph'} that are informative and cover the core idea.\n\nText:\n${text}\n\nSummary in ${format === 'bullets' ? 'bullet points:' : 'paragraph:'}`;
+
+        try {
+          const res = await fetch("https://api.together.xyz/inference", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${TOGETHER_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: TOGETHER_MODEL,
+              prompt: prompt,
+              max_tokens: 512,
+              temperature: 0.7,
+              top_p: 0.9,
+              stop: ["User:", "###"]
+            })
+          });
+
+          const data = await res.json();
+
+          const rawText = data.output?.choices?.[0]?.text?.trim().replace(/^\n+/, '') || "";
+          const cleanedText = rawText.replace(/[^\x20-\x7E\n]/g, ''); // Remove unknown characters
+          return cleanedText || "⚠️ Unable to generate summary.";
+        } catch (error) {
+          console.error("⚠️ Error calling Together API:", error);
+          return "⚠️ Error generating summary.";
+        }
+      }
+
+
+
+      exportResults() {
+        const results = {
+          fileName: this.uploadedFile.name,
+          timestamp: new Date().toISOString(),
+          sections: this.extractedSections
+        };
+
+        const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.uploadedFile.name}_summary.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showStatus('Results exported successfully!', 'success');
+      }
+
+      showStatus(message, type) {
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message ${type}`;
+        statusMessage.style.display = 'block';
+        setTimeout(() => {
+          statusMessage.style.display = 'none';
+        }, 3000);
+      }
+
+      delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.summarizer = new PDFSummarizer();
+    });
+  </script>
+</body>
+</html>
